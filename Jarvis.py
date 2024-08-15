@@ -1,39 +1,70 @@
-import cv2
-import mediapipe as mp
-import pyautogui
-cap = cv2.VideoCapture(0)
-hand_detector = mp.solutions.hands.Hands()
-drawing_utils = mp.solutions.drawing_utils
-screen_width, screen_height = pyautogui.size()
-index_y = 0
-while True:
-    _, frame = cap.read()
-    frame = cv2.flip(frame, 1)
-    frame_height, frame_width, _ = frame.shape
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    output = hand_detector.process(rgb_frame)
-    hands = output.multi_hand_landmarks
-    if hands:
-        for hand in hands:
-            drawing_utils.draw_landmarks(frame, hand)
-            landmarks = hand.landmark
-            for id, landmark in enumerate(landmarks):
-                x = int(landmark.x*frame_width)
-                y = int(landmark.y*frame_height)
-                if id == 8:
-                    cv2.circle(img=frame, center=(x,y), radius=10, color=(0, 255, 255))
-                    index_x = screen_width/frame_width*x
-                    index_y = screen_height/frame_height*y
+import pyttsx3
+import datetime
+import speech_recognition as sr
+import wikipedia
+import webbrowser
+import os
+engine = pyttsx3.init('sapi5')
 
-                if id == 4:
-                    cv2.circle(img=frame, center=(x,y), radius=10, color=(0, 255, 255))
-                    thumb_x = screen_width/frame_width*x
-                    thumb_y = screen_height/frame_height*y
-                    print('outside', abs(index_y - thumb_y))
-                    if abs(index_y - thumb_y) < 20:
-                        pyautogui.click()
-                        pyautogui.sleep(1)
-                    elif abs(index_y - thumb_y) < 100:
-                        pyautogui.moveTo(index_x, index_y)
-    cv2.imshow('Virtual Mouse', frame)
-    cv2.waitKey(0)
+voices = engine.getProperty('voices')
+#print(voices[0].id)
+engine.setProperty('voice',voices[0].id)
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+
+def wisMe():
+    hour=int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("good morning!")
+
+    elif hour>=12 and hour<18:
+         speak("good evening!")
+    speak("I am jarvis sir,How can I help you")
+
+
+def takecommand():
+     r=sr.Recognizer()
+     with sr.Microphone() as source:
+          print("Listening....")
+          r.pause_threshold = 1
+          audio =r.listen(source)
+
+     try:
+        print("Recognizing....")
+        query = r.recognize_google(audio,language='en-in')
+        print(f"user said : {query}\n")
+     except Exception as e:
+          #
+          # print(e)
+          print("say that again please....")
+          return "None"
+     return query       
+if __name__=="__main__":
+      wisMe()
+      while True:
+        query = takecommand().lower()
+
+        if 'wikipedia' in query :
+            speak('searching wikipidia....')
+            query=query.replace("wikipedia","")
+            results = wikipedia.summary(query,sentences=2)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+        elif 'open youtube' in query:
+            webbrowser.open("youtube.com") 
+        elif 'open google' in query:
+            webbrowser.open("google.com")        
+        elif 'open stackoverflow' in query:
+            webbrowser.open("stackoverflow.com")   
+        elif 'the time' in query:
+            starttime=datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"Sir,The time is {starttime}")
+        elif 'open code' in query:
+            codepath= "C:\\Users\\ymrat\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Visual Studio Code\\Visual Studio Code.lnk"
+
+            os.startfile(codepath)
+           
